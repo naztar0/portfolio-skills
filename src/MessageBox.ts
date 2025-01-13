@@ -46,8 +46,6 @@ export class MessageBox {
     this.openButton.onclick = () => this.show('info');
 
     document.body.appendChild(this.openButton);
-    this.showMessages = true;
-    this.show('info');
   };
 
   public start() {
