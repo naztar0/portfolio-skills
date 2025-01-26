@@ -68,6 +68,11 @@ export class Scene {
       if (light.name === 'Sun') {
         light.visible = false;
       }
+      if (light.type === 'PointLight') {
+        light.castShadow = true;
+        light.shadow!.mapSize.width = 1024;
+        light.shadow!.mapSize.height = 1024;
+      }
       light.intensity = candelaToWats(light.intensity) / BLENDER_LIGHT_COEFFICIENT;
     });
   };
@@ -162,6 +167,9 @@ export class Scene {
   };
 
   private setupGTLFObjects(textures: Record<string, THREE.Texture>) {
+    const landObj = this.getSceneObject('Land');
+    landObj.receiveShadow = true;
+
     const oceanObj = this.getSceneObject('Ocean');
     oceanObj.visible = false;
     this.ocean = new Ocean(oceanObj.position, textures.ocean);
@@ -184,7 +192,10 @@ export class Scene {
     this.instance.add(mysqlWaterEmitter.emitterGroup.mesh);
 
     const phpObj = this.getSceneArmObject('PHP');
-    phpObj.traverse((node) => node.frustumCulled = false);
+    phpObj.traverse((node) => {
+      node.frustumCulled = false;
+      node.castShadow = true;
+    });
     this.textureAnimator.add(parseTexture(phpObj.children[2].children[1]), -0.34, 5, 3);
     const phpEmitterObj = phpObj.children[1];
     const phpEmitterPosition = new THREE.Vector3();
@@ -196,7 +207,10 @@ export class Scene {
     this.instance.add(phpWaterEmitter.emitterGroup.mesh);
 
     const ferrisObj = this.getSceneArmObject('Ferris');
-    ferrisObj.traverse((node) => node.frustumCulled = false);
+    ferrisObj.traverse((node) => {
+      node.frustumCulled = false;
+      node.castShadow = true;
+    });
     this.textureAnimator.add(parseTexture(ferrisObj.children[5].children[1]), [0, -0.42, -0.7], 10);
     const ferrisEmitterObj = ferrisObj.children[4];
     const ferrisEmitterPosition = new THREE.Vector3();
@@ -229,6 +243,10 @@ export class Scene {
     java.traverse((node) => node.frustumCulled = false);
 
     const umbObj = this.getSceneArmObject('Umbrella').children.find((child) => child.name === 'Umbrella_obj') as THREE.SkinnedMesh;
+    umbObj.traverse((node) => {
+      node.frustumCulled = false;
+      node.castShadow = true;
+    });
     umbObj.material = new THREE.ShaderMaterial({
       uniforms: {
         texture1: { value: textures.umbrellaOut },
