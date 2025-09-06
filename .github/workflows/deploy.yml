@@ -1,0 +1,48 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${SSH_PRIVATE_KEY}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "${SSH_PORT}" "${SSH_HOST}" >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+
+      - name: Deploy
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_deploy -p ${SSH_PORT}" \
+            dist/ "${SSH_USER}@${SSH_HOST}:${SSH_TARGET_DIR}"
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_TARGET_DIR: ${{ secrets.SSH_TARGET_DIR }}
